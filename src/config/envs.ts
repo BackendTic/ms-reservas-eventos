@@ -8,6 +8,8 @@ interface EnvVars{
     IMPLEMENTOS_MICROSERVICE_PORT:number
     ESPACIOS_MICROSERVICE_HOST:string
     ESPACIOS_MICROSERVICE_PORT:number
+    GATEWAY_HOST:string
+    GATEWAY_PORT:number
 }
 
 const envsSchema = joi.object({
@@ -16,6 +18,8 @@ const envsSchema = joi.object({
     IMPLEMENTOS_MICROSERVICE_PORT: joi.number().required(),
     ESPACIOS_MICROSERVICE_HOST: joi.string().required(),
     ESPACIOS_MICROSERVICE_PORT: joi.number().required(),
+    GATEWAY_HOST: joi.string().required(),
+    GATEWAY_PORT: joi.number().required(),
 })
 .unknown(true)
 
@@ -31,5 +35,7 @@ export const envs = {
     implementosMicroservicePort: envVars.IMPLEMENTOS_MICROSERVICE_PORT,
     espaciosMicroserviceHost: envVars.ESPACIOS_MICROSERVICE_HOST,
     espaciosMicroservicePort: envVars.ESPACIOS_MICROSERVICE_PORT,
+    gatewayHost: envVars.GATEWAY_HOST,
+    gatewayPort: envVars.GATEWAY_PORT,
 }
 

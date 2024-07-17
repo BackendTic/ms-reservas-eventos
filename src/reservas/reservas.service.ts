@@ -11,6 +11,7 @@ import { ESPACIOS_SERVICE, IMPLEMENTOS_SERVICE } from 'src/config/services';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { PrismaClient } from '@prisma/client';
+import { envs } from 'src/config/envs';
 
 @Injectable()
 export class ReservasService extends PrismaClient implements OnModuleInit {
@@ -308,9 +309,40 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
       },
     });
   
-    return reservas.filter(reserva => reserva.fechaInicio.getTime() === reserva.fechaFin.getTime());
+    const reservasFiltradas = reservas.filter(
+      (reserva) => reserva.fechaInicio.getTime() === reserva.fechaFin.getTime()
+    );
+  
+    const reservasConDetalles = await Promise.all(
+      reservasFiltradas.map(async (reserva) => {
+        const espacio = await this.espaciosClient
+          .send("findOneEspacio", reserva.espacioId)
+          .toPromise();
+  
+        const reservaDetalle: any = {
+          ...reserva,
+          disciplina: espacio.disciplina,
+          nombreEspacio: espacio.nombre,
+          imagen: `${envs.gatewayHost}/files/espacios/${espacio.imagen}`,
+        };
+  
+        if (reserva.implementoId !== null) {
+          const implemento = await this.implementosClient
+            .send("findOneImplemento", reserva.implementoId)
+            .toPromise();
+  
+          reservaDetalle.nombreImplemento = implemento.nombre;
+        }
+  
+        return reservaDetalle;
+      })
+    );
+  
+    return reservasConDetalles;
   }
   
+
+
   async findAllEventos() {
     const reservas = await this.reserva.findMany({
       where: {
@@ -318,8 +350,39 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
       },
     });
   
-    return reservas.filter(reserva => reserva.fechaInicio.getTime() !== reserva.fechaFin.getTime());
+    const reservasFiltradas = reservas.filter(
+      (reserva) => reserva.fechaInicio.getTime() !== reserva.fechaFin.getTime()
+    );
+  
+    const reservasConDetalles = await Promise.all(
+      reservasFiltradas.map(async (reserva) => {
+        const espacio = await this.espaciosClient
+          .send("findOneEspacio", reserva.espacioId)
+          .toPromise();
+  
+        const reservaDetalle: any = {
+          ...reserva,
+          disciplina: espacio.disciplina,
+          nombreEspacio: espacio.nombre,
+          imagen: `${envs.gatewayHost}/files/espacios/${espacio.imagen}`,
+        };
+  
+        if (reserva.implementoId !== null) {
+          const implemento = await this.implementosClient
+            .send("findOneImplemento", reserva.implementoId)
+            .toPromise();
+  
+          reservaDetalle.nombreImplemento = implemento.nombre;
+        }
+  
+        return reservaDetalle;
+      })
+    );
+  
+    return reservasConDetalles;
   }
+  
+  
   
   
   async findAllTimeSlots() {
