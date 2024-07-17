@@ -24,69 +24,13 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
   constructor(
     @Inject(IMPLEMENTOS_SERVICE)
     private readonly implementosClient: ClientProxy,
-    @Inject(ESPACIOS_SERVICE) private readonly espaciosClient: ClientProxy,
+    @Inject(ESPACIOS_SERVICE) 
+    private readonly espaciosClient: ClientProxy,
   ) {
     super();
   }
+
   /*
-  async create(createReservaDto: CreateReservaDto) {
-    const { usuarioId, espacioId, fechaInicio, fechaFin, horaInicio, estado } =
-      createReservaDto;
-
-    // Convertir fechas de inicio y fin a Date
-    const startDate = new Date(fechaInicio);
-    const endDate = new Date(fechaFin);
-
-    // Crear un array de fechas para cada día entre fechaInicio y fechaFin
-    const dates = this.getDatesBetween(startDate, endDate);
-
-    // Verificar si el usuario tiene reservas en alguna de las fechas entre fechaInicio y fechaFin
-    for (const date of dates) {
-      const existingTimeSlot = await this.timeSlot.findMany({
-        where: {
-          usuarioId,
-          fecha: date,
-        },
-      });
-
-      if (existingTimeSlot.length > 0) {
-        return {
-          error: 'Usuario alcanzó el límite de reservas por hoy',
-        };
-      }
-    }
-
-    // Crear la nueva reserva ya que no se encontraron reservas existentes en las fechas dadas
-    const reserva = await this.reserva.create({
-      data: {
-        usuarioId,
-        espacioId,
-        fechaInicio,
-        fechaFin,
-        horaInicio,
-        estado,
-      },
-      include: {
-        TimeSlot: true, // Incluye los TimeSlots asociados a la reserva creada
-      },
-    });
-
-    // Crear TimeSlots para cada día entre fechaInicio y fechaFin
-    for (const date of dates) {
-      await this.timeSlot.create({
-        data: {
-          fecha: date,
-          horaInicio,
-          reservaId: reserva.id, // Asegúrate de conectar con el campo correcto
-          usuarioId, // Almacena el usuarioId en el TimeSlot
-        },
-      });
-    }
-
-    return reserva;
-  }
-*/
-
   async create(createReservaDto: CreateReservaDto) {
     const {
       usuarioId,
@@ -125,6 +69,30 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
     // Convertir fechas de inicio y fin a Date
     const startDate = new Date(fechaInicio);
     const endDate = new Date(fechaFin);
+
+    // Verificar si hay conflictos de reservas existentes en el mismo espacio y rango de fechas
+    const conflictingReservations = await this.reserva.findMany({
+      where: {
+        espacioId,
+        horaInicio: createReservaDto.horaInicio,
+        OR: [
+          {
+            fechaInicio: {
+              lte: endDate,
+            },
+            fechaFin: {
+              gte: startDate,
+            },
+          },
+        ],
+      },
+    });
+
+    if (conflictingReservations.length > 0) {
+      return {
+        error: 'Existe un conflicto con alguna reserva anterior',
+      };
+    }
 
     // Crear un array de fechas para cada día entre fechaInicio y fechaFin
     const dates = this.getDatesBetween(startDate, endDate);
@@ -175,6 +143,138 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
 
     return reserva;
   }
+*/
+
+  async create(createReservaDto: CreateReservaDto) {
+    const {
+      usuarioId,
+      espacioId,
+      fechaInicio,
+      fechaFin,
+      horaInicio,
+      estado,
+      implemento_req,
+      isAdmin
+    } = createReservaDto;
+
+    let implementoId: string | null = null;
+
+    if (implemento_req) {
+      // Obtener disciplina del espacio
+      const espacio = await this.espaciosClient
+        .send('findOneEspacio', espacioId)
+        .toPromise();
+      const disciplina = espacio?.disciplina;
+
+      if (disciplina) {
+        // Obtener implementos disponibles para la disciplina
+        const implementos = await this.implementosClient
+          .send('findImplementsDiscipline', disciplina)
+          .toPromise();
+
+        if (implementos && implementos.length > 0) {
+          // Seleccionar un implemento al azar
+          const implemento =
+            implementos[Math.floor(Math.random() * implementos.length)];
+          implementoId = implemento.id;
+        }
+      }
+    }
+
+    // Convertir fechas de inicio y fin a Date
+    const startDate = new Date(fechaInicio);
+    const endDate = new Date(fechaFin);
+
+    // Verificar si hay conflictos de reservas existentes en el mismo espacio, rango de fechas y hora
+    const conflictingReservations = await this.reserva.findMany({
+      where: {
+        espacioId,
+        OR: [
+          {
+            fechaInicio: {
+              lte: endDate,
+            },
+            fechaFin: {
+              gte: startDate,
+            },
+          },
+        ],
+      },
+      include: {
+        TimeSlot: true, // Incluir los TimeSlots para verificar las horas
+      },
+    });
+
+    for (const reservation of conflictingReservations) {
+      const conflictingTimeSlots = reservation.TimeSlot.filter(
+        (slot) =>
+          slot.horaInicio === horaInicio &&
+          slot.fecha >= startDate &&
+          slot.fecha <= endDate,
+      );
+
+      if (conflictingTimeSlots.length > 0) {
+        return {
+          error: 'Existe un conflicto con alguna reserva anterior',
+        };
+      }
+    }
+
+    // Crear un array de fechas para cada día entre fechaInicio y fechaFin
+    const dates = this.getDatesBetween(startDate, endDate);
+
+    // Verificar si el usuario tiene reservas en alguna de las fechas entre fechaInicio y fechaFin
+    for (const date of dates) {
+      const existingTimeSlot = await this.timeSlot.findMany({
+        where: {
+          usuarioId,
+          fecha: date,
+        },
+      });
+
+      if (existingTimeSlot.length > 0 && isAdmin === false) {
+        return {
+          error: 'Usuario alcanzó el límite de reservas por hoy',
+        };
+      }
+    }
+
+    // Crear la nueva reserva ya que no se encontraron reservas existentes en las fechas dadas
+    const reserva = await this.reserva.create({
+      data: {
+        usuarioId,
+        espacioId,
+        fechaInicio,
+        fechaFin,
+        horaInicio,
+        estado,
+        implementoId, // Incluye el implementoId si se seleccionó uno
+      },
+      include: {
+        TimeSlot: true, // Incluye los TimeSlots asociados a la reserva creada
+      },
+    });
+
+    const espacio = await this.espaciosClient
+        .send('findOneEspacio', espacioId)
+        .toPromise();
+
+    // Crear TimeSlots para cada día entre fechaInicio y fechaFin
+    for (const date of dates) {
+      await this.timeSlot.create({
+        data: {
+          fecha: date,
+          horaInicio,
+          reservaId: reserva.id, // Asegúrate de conectar con el campo correcto
+          usuarioId, // Almacena el usuarioId en el TimeSlot
+          espacio: espacio.nombre,
+          disciplina: espacio.disciplina
+        },
+      });
+    }
+
+    return reserva;
+  }
 
   private getDatesBetween(startDate: Date, endDate: Date): Date[] {
     const dates = [];
@@ -189,21 +289,76 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
     return dates;
   }
 
-  async findAll() {
-    const implementos = await firstValueFrom(
-      this.implementosClient.send('findAllImplemento', {}),
-    );
-    return implementos;
-    //return `This action returns all reservas`;
+
+  async findOneByUserId(id:string) {
+    const reservas = await this.reserva.findMany({
+      where: {
+        estado: "Activa",
+        usuarioId: id
+      },
+    });
+  
+    return reservas.filter(reserva => reserva.fechaInicio.getTime() === reserva.fechaFin.getTime());
+  }
+
+  async findAllReservas() {
+    const reservas = await this.reserva.findMany({
+      where: {
+        estado: "Activa",
+      },
+    });
+  
+    return reservas.filter(reserva => reserva.fechaInicio.getTime() === reserva.fechaFin.getTime());
+  }
+  
+  async findAllEventos() {
+    const reservas = await this.reserva.findMany({
+      where: {
+        estado: "Activa",
+      },
+    });
+  
+    return reservas.filter(reserva => reserva.fechaInicio.getTime() !== reserva.fechaFin.getTime());
+  }
+  
+  
+  async findAllTimeSlots() {
+    return this.timeSlot.findMany({})
   }
 
   findOne(id: string) {
     return `This action returns a #${id} reserva`;
   }
 
-  remove(id: string) {
-    return `This action removes a #${id} reserva`;
+  async remove(id: string) {
+    // Buscar la reserva por ID, incluyendo los TimeSlots
+    const reserva = await this.reserva.findUnique({
+      where: { id },
+      include: { TimeSlot: true },
+    });
+  
+    if (!reserva) {
+      throw new Error('Reserva no encontrada');
+    }
+  
+    // Cambiar el estado de la reserva a "Cancelada"
+    const updatedReserva = await this.reserva.update({
+      where: { id },
+      data: {
+        estado: "Cancelada",
+      },
+    });
+  
+    // Eliminar los TimeSlots asociados a la reserva
+    for (const slot of reserva.TimeSlot) {
+      await this.timeSlot.delete({
+        where: { id: slot.id },
+      });
+    }
+  
+    return updatedReserva;
   }
+  
 
   async findTimeSlotsByEspacioAndDates(
     espacioId: string,
@@ -221,6 +376,23 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
           gte: startDate,
           lte: endDate,
         },
+        Reserva: {
+          espacioId,
+        },
+      },
+    });
+
+    return timeSlots;
+  }
+
+
+  async findTimeSlotsByEspacio(
+    espacioId: string
+  ) {
+
+    // Encontrar todos los TimeSlots de un espacio específico entre las fechas dadas
+    const timeSlots = await this.timeSlot.findMany({
+      where: {
         Reserva: {
           espacioId,
         },
@@ -363,6 +535,8 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
             horaInicio !== undefined ? horaInicio : reserva.horaInicio,
           reservaId: id,
           usuarioId: reserva.usuarioId,
+          espacio: reserva.TimeSlot[0].espacio,
+          disciplina: reserva.TimeSlot[0].disciplina
         },
       });
     }
@@ -379,4 +553,34 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
 
     return updatedReserva;
   }
+
+
+  async updateTimeSlotNames(espacioId: string, nombre: string) {
+    // Encontrar todas las reservas que tienen el espacioId proporcionado
+    const reservas = await this.reserva.findMany({
+      where: {
+        espacioId,
+      },
+      include: {
+        TimeSlot: true, // Incluir los TimeSlots para actualizarlos
+      },
+    });
+
+    // Recorrer todas las reservas y actualizar el atributo espacio de los TimeSlots
+    for (const reserva of reservas) {
+      for (const timeSlot of reserva.TimeSlot) {
+        await this.timeSlot.update({
+          where: {
+            id: timeSlot.id,
+          },
+          data: {
+            espacio: nombre,
+          },
+        });
+      }
+    }
+
+    return { message: `TimeSlots actualizados para espacioId: ${espacioId}` };
+  }
+
 }

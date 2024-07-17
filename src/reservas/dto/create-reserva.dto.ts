@@ -38,4 +38,7 @@ export class CreateReservaDto {
 
     @IsBoolean()
     implemento_req: Boolean
+
+    @IsBoolean()
+    isAdmin: Boolean
 }

@@ -37,5 +37,7 @@ model TimeSlot {
   Reserva Reserva?  @relation(fields: [reservaId], references: [id])
   reservaId String
   usuarioId String
+  espacio String
+  disciplina String
 }
 
