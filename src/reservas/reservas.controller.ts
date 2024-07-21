@@ -64,7 +64,7 @@ export class ReservasController {
 
   @MessagePattern('updateReserva')
   update(@Payload() updateReservaDto: any) {
-    console.log(updateReservaDto);
+    // console.log(updateReservaDto);
     return this.reservasService.updateReserva( updateReservaDto);
   }
 
