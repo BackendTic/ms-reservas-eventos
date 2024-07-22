@@ -28,6 +28,9 @@ model Reserva {
   horaInicio    Int
   estado EstadoReserva 
   TimeSlot TimeSlot[]
+  nombreReserva String
+  esEvento Boolean @default(false)
+  horaFin Int
 }
 
 model TimeSlot {
@@ -39,5 +42,7 @@ model TimeSlot {
   usuarioId String
   espacio String
   disciplina String
+  nombreReserva String
+  esEvento Boolean @default(false)
 }
 

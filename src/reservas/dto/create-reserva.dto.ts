@@ -1,6 +1,6 @@
 import { EstadoReserva } from "@prisma/client";
 import { Transform } from "class-transformer";
-import { IsBoolean, IsDate, IsEnum, IsInt, IsOptional, IsString, IsUUID, isBoolean } from "class-validator"
+import { IsBoolean, IsDate, IsEnum, IsIn, IsInt, IsOptional, IsString, IsUUID, isBoolean } from "class-validator"
 
 export class CreateReservaDto {
     @IsString()
@@ -41,4 +41,13 @@ export class CreateReservaDto {
 
     @IsBoolean()
     isAdmin: Boolean
+
+    @IsString()
+    nombreReserva:string
+
+    @IsBoolean()
+    esEvento: boolean
+
+    @IsInt()
+    horaFin: number
 }
