@@ -46,3 +46,23 @@ model TimeSlot {
   esEvento Boolean @default(false)
 }
 
+model Noticias{
+  id     String   @id @default(uuid())
+  titulo String
+  texto String
+  imagen String @default("")
+}
+
+model Informacion{
+  id     String   @id @default(uuid())
+  titulo String
+  texto String
+  imagen String @default("")
+}
+
+model Representantes{
+  id String   @id @default(uuid())
+  nombre String
+  cargo String
+  imagen String @default("")
+}

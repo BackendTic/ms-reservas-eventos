@@ -41,7 +41,7 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
       estado,
       implemento_req,
       isAdmin,
-      //nuevas propiedades
+      // nuevas propiedades
       nombreReserva,
       esEvento,
       horaFin,
@@ -136,8 +136,8 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
       data: {
         usuarioId,
         espacioId,
-        fechaInicio,
-        fechaFin,
+        fechaInicio: startDate,
+        fechaFin: endDate,
         horaInicio,
         estado,
         implementoId, // Incluye el implementoId si se seleccionó uno
@@ -154,7 +154,6 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
       .send('findOneEspacio', espacioId)
       .toPromise();
 
-    // Crear TimeSlots para cada día entre fechaInicio y fechaFin
     // Crear TimeSlots para cada día entre fechaInicio y fechaFin
     for (const date of dates) {
       for (let hour = horaInicio; hour <= horaFin; hour++) {
@@ -385,7 +384,7 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
 
     return timeSlotsWithEspacioId;
   }
-
+ 
   async updateReserva(updateReservaDto: UpdateReservaDto) {
     const {
       id,
@@ -439,8 +438,8 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
 
     for (const reservation of conflictingReservations) {
       for (
-        let hour = horaInicio || reserva.horaInicio;
-        hour <= (horaFin || reserva.horaFin);
+        let hour = horaInicio !== undefined ? horaInicio : reserva.horaInicio;
+        hour <= (horaFin !== undefined ? horaFin : reserva.horaFin);
         hour++
       ) {
         const conflictingTimeSlots = reservation.TimeSlot.filter(
@@ -467,16 +466,21 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
         fechaFin: endDate,
         horaInicio: horaInicio !== undefined ? horaInicio : reserva.horaInicio,
         horaFin: horaFin !== undefined ? horaFin : reserva.horaFin,
-        estado: estado !== undefined ? estado: reserva.estado,
-        nombreReserva: nombreReserva !== undefined ? nombreReserva: reserva.nombreReserva,
+        estado: estado !== undefined ? estado : reserva.estado,
+        nombreReserva:
+          nombreReserva !== undefined ? nombreReserva : reserva.nombreReserva,
       },
     });
+
+    const espacio = await this.espaciosClient
+      .send('findOneEspacio', espacioId || reserva.espacioId)
+      .toPromise();
 
     // Actualizar o crear TimeSlots dentro del nuevo rango de fechas y horas
     for (const date of dates) {
       for (
-        let hour = horaInicio || reserva.horaInicio;
-        hour <= (horaFin || reserva.horaFin);
+        let hour = horaInicio !== undefined ? horaInicio : reserva.horaInicio;
+        hour <= (horaFin !== undefined ? horaFin : reserva.horaFin);
         hour++
       ) {
         await this.timeSlot.upsert({
@@ -497,9 +501,12 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
             horaInicio: hour,
             reservaId: id,
             usuarioId: reserva.usuarioId,
-            espacio: reserva.TimeSlot[0].espacio,
-            disciplina: reserva.TimeSlot[0].disciplina,
-            nombreReserva: reserva.nombreReserva,
+            espacio: espacio.nombre,
+            disciplina: espacio.disciplina,
+            nombreReserva:
+              nombreReserva !== undefined
+                ? nombreReserva
+                : reserva.nombreReserva,
           },
         });
       }
@@ -510,13 +517,14 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
       Array.from(
         {
           length:
-            (horaFin || reserva.horaFin) -
-            (horaInicio || reserva.horaInicio) +
+            (horaFin !== undefined ? horaFin : reserva.horaFin) -
+            (horaInicio !== undefined ? horaInicio : reserva.horaInicio) +
             1,
         },
         (_, i) => ({
           fecha: d.getTime(),
-          hora: (horaInicio || reserva.horaInicio) + i,
+          hora:
+            (horaInicio !== undefined ? horaInicio : reserva.horaInicio) + i,
         }),
       ),
     );
@@ -563,5 +571,91 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
     }
 
     return { message: `TimeSlots actualizados para espacioId: ${espacioId}` };
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////
+
+  //// informacion //
+  async createInformation(createInformationDto: any) {
+    return await this.informacion.create({ data: createInformationDto });
+  }
+
+  async findAllInformation() {
+    return await this.informacion.findMany({});
+  }
+
+  async findOneInformation(id: string) {
+    return await this.informacion.findUnique({
+      where: { id: id },
+    });
+  }
+
+  async updateInformation(id: string, updateInformationDto: any) {
+    return await this.informacion.update({
+      where: { id },
+      data: updateInformationDto,
+    });
+  }
+
+  async deleteInformation(id: string) {
+    return await this.informacion.delete({
+      where: { id: id },
+    });
+  }
+
+  //// noticias //
+  async createNoticias(createNoticiaDto: any) {
+    return await this.noticias.create({ data: createNoticiaDto });
+  }
+
+  async findAllNoticias() {
+    return await this.noticias.findMany({});
+  }
+
+  async findOneNoticias(id: string) {
+    return await this.noticias.findUnique({
+      where: { id: id },
+    });
+  }
+
+  async updateNoticias(id: string, updateInformationDto: any) {
+    return await this.noticias.update({
+      where: { id },
+      data: updateInformationDto,
+    });
+  }
+
+  async deleteNoticias(id: string) {
+    return await this.noticias.delete({
+      where: { id: id },
+    });
+  }
+
+  //// representantes //
+  async createRepresentantes(createRepresentantesDto: any) {
+    return await this.representantes.create({ data: createRepresentantesDto });
+  }
+
+  async findAllRepresentantes() {
+    return await this.representantes.findMany({});
+  }
+
+  async findOneRepresentantes(id: string) {
+    return await this.representantes.findUnique({
+      where: { id: id },
+    });
+  }
+
+  async updateRepresentantes(id: string, updateRepresentantesDto: any) {
+    return await this.representantes.update({
+      where: { id },
+      data: updateRepresentantesDto,
+    });
+  }
+
+  async deleteRepresentantes(id: string) {
+    return await this.representantes.delete({
+      where: { id: id },
+    });
   }
 }

@@ -72,4 +72,82 @@ export class ReservasController {
   remove(@Payload() id: string) {
     return this.reservasService.remove(id);
   }
+  
+  /////////////// informacion ////////////////////
+  @MessagePattern('createInformation')
+  createInformation(@Payload() createInformacionDto: any) {
+    return this.reservasService.createInformation(createInformacionDto); 
+  }
+
+  @MessagePattern('findOneInformacion')
+  findOneInformation(@Payload() id: string) {
+    return this.reservasService.findOneInformation(id);
+  }
+
+  @MessagePattern('findAllInformacion')
+  findAllInformation() {
+    return this.reservasService.findAllInformation(); 
+  }
+  
+  @MessagePattern('updateInformacion')
+  updateInformacion(@Payload() updateInformationDto: any) {
+    return this.reservasService.updateInformation(updateInformationDto.id, updateInformationDto); 
+  }
+
+  @MessagePattern('removeInformation')
+  deleteInformation(@Payload() id: string) {
+    return this.reservasService.deleteInformation(id);
+  }
+
+  /////////////// noticias ////////////////////
+  @MessagePattern('createNoticias')
+  createNoticia(@Payload() createNoticiaDto: any) {
+    return this.reservasService.createNoticias(createNoticiaDto); 
+  }
+
+  @MessagePattern('findOneNoticias')
+  findOneNoticia(@Payload() id: string) {
+    return this.reservasService.findOneNoticias(id);
+  }
+
+  @MessagePattern('findAllNoticias')
+  findAllNoticia() {
+    return this.reservasService.findAllNoticias(); 
+  }
+  
+  @MessagePattern('updateNoticias')
+  updateNoticia(@Payload() updateNoticiaDto: any) {
+    return this.reservasService.updateNoticias(updateNoticiaDto.id, updateNoticiaDto); 
+  }
+
+  @MessagePattern('removeNoticias')
+  deleteNoticia(@Payload() id: string) {
+    return this.reservasService.deleteNoticias(id);
+  }
+
+  /////////////// representante ////////////////////
+  @MessagePattern('createRepresentantes')
+  createRepresentante(@Payload() createRepresentanteDto: any) {
+    return this.reservasService.createRepresentantes(createRepresentanteDto); 
+  }
+
+  @MessagePattern('findOneRepresentantes')
+  findOneRepresentante(@Payload() id: string) {
+    return this.reservasService.findOneRepresentantes(id);
+  }
+
+  @MessagePattern('findAllRepresentantes')
+  findAllRepresentante() {
+    return this.reservasService.findAllRepresentantes(); 
+  }
+  
+  @MessagePattern('updateRepresentantes')
+  updateRepresentante(@Payload() updateRepresentantesDto: any) {
+    return this.reservasService.updateRepresentantes(updateRepresentantesDto.id, updateRepresentantesDto); 
+  }
+
+  @MessagePattern('removeRepresentantes')
+  deleteRepresentante(@Payload() id: string) {
+    return this.reservasService.deleteRepresentantes(id);
+  }
 }
