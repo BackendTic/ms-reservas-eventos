@@ -31,6 +31,8 @@ model Reserva {
   nombreReserva String
   esEvento Boolean @default(false)
   horaFin Int
+  nombreEncargado String 
+  emailEncargado String 
 }
 
 model TimeSlot {

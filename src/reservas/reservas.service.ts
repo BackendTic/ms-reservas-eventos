@@ -45,6 +45,8 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
       nombreReserva,
       esEvento,
       horaFin,
+      nombreEncargado,
+      emailEncargado
     } = createReservaDto;
 
     let implementoId: string | null = null;
@@ -144,6 +146,8 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
         horaFin,
         nombreReserva,
         esEvento,
+        nombreEncargado,
+        emailEncargado
       },
       include: {
         TimeSlot: true, // Incluye los TimeSlots asociados a la reserva creada
@@ -395,6 +399,8 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
       horaFin,
       estado,
       nombreReserva,
+      nombreEncargado,
+      emailEncargado
     } = updateReservaDto;
 
     const reserva = await this.reserva.findUnique({
@@ -467,6 +473,8 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
         horaInicio: horaInicio !== undefined ? horaInicio : reserva.horaInicio,
         horaFin: horaFin !== undefined ? horaFin : reserva.horaFin,
         estado: estado !== undefined ? estado : reserva.estado,
+        nombreEncargado: nombreEncargado !== undefined ? nombreEncargado : reserva.nombreEncargado,
+        emailEncargado: emailEncargado !== undefined ? emailEncargado : reserva.emailEncargado,
         nombreReserva:
           nombreReserva !== undefined ? nombreReserva : reserva.nombreReserva,
       },
