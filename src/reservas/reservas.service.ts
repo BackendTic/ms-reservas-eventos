@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   Logger,
@@ -12,6 +14,8 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { PrismaClient } from '@prisma/client';
 import { envs } from 'src/config/envs';
+import { STATUS_CODES } from 'http';
+import { response } from 'express';
 
 @Injectable()
 export class ReservasService extends PrismaClient implements OnModuleInit {
@@ -107,9 +111,7 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
         );
 
         if (conflictingTimeSlots.length > 0) {
-          return {
-            error: 'Existe un conflicto con alguna reserva anterior',
-          };
+          throw new BadRequestException('Existe un conflicto con alguna reserva anterior');
         }
       }
     }
@@ -127,9 +129,7 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
       });
 
       if (existingTimeSlot.length > 0 && isAdmin === false) {
-        return {
-          error: 'Usuario alcanzó el límite de reservas por hoy',
-        };
+        throw new BadRequestException(`Usuario alcanzo el maximo numero de reservas por hoy`)
       }
     }
 
@@ -295,7 +295,7 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
     });
 
     if (!reserva) {
-      throw new Error('Reserva no encontrada');
+      throw new BadRequestException(`Reserva no encontrada`)
     }
 
     // Cambiar el estado de la reserva a "Cancelada"
@@ -414,9 +414,8 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
 
     // Validaciones
     if (fechaInicio && fechaFin && new Date(fechaInicio) > new Date(fechaFin)) {
-      throw new Error(
-        'La fecha de inicio no puede ser posterior a la fecha de fin',
-      );
+      throw new BadRequestException('La fecha de inicio no puede ser posterior a la fecha de fin')
+      
     }
 
     const startDate = fechaInicio ? new Date(fechaInicio) : reserva.fechaInicio;
@@ -456,7 +455,7 @@ export class ReservasService extends PrismaClient implements OnModuleInit {
         );
 
         if (conflictingTimeSlots.length > 0) {
-          throw new Error('Existe un conflicto con alguna reserva anterior');
+          throw new BadRequestException(`Existe un conflicto con alguna reserva anterior`)
         }
       }
     }
